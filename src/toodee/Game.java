@@ -3,21 +3,30 @@ package toodee;
 import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 
+import toodee.entities.Box;
+import toodee.entities.Entity;
 import toodee.graphics.Screen;
+import toodee.input.Mouse;
 
 public class Game extends Canvas implements Runnable{
 
 	private static final long serialVersionUID = 1L;
 	
-	public static int width = 300;
+	public static int width = 800;
 	public static int height = width / 16 * 9;
 	public static int scale = 3;
+	private int clickCount;
+	private int lastClickCount = 0;
+	public List<Entity> entities;
 	
 	private Thread gameThread;
 	public JFrame frame = new JFrame();
@@ -29,12 +38,14 @@ public class Game extends Canvas implements Runnable{
 	private int[] pixels = ((DataBufferInt)image.getRaster().getDataBuffer()).getData();
 	
 	public Game() {
-		Dimension size = new Dimension(width * scale, height * scale);
+		Dimension size = new Dimension(width, height);
 		setPreferredSize(size);
 		screen = new Screen(width, height);
 		frame = new JFrame();
-		
-		
+		entities = new ArrayList<Entity>();
+		Mouse mouse = new Mouse();
+		addMouseListener(mouse);
+		addMouseMotionListener(mouse);
 	}
 	
 	public static void main(String[] args){
@@ -50,14 +61,39 @@ public class Game extends Canvas implements Runnable{
 	}
 	
 	public void run() {
+		long lastTime = System.nanoTime();
+		long timer = System.currentTimeMillis();
+		final double ns = 1000000000.0 / 60.0;
+		double delta = 0;
+		int frames = 0;
+		int updates = 0;
 		while(running) {
-			update();
+			long now = System.nanoTime();
+			delta += (now - lastTime) / ns;
+			lastTime = now;
+			while (delta >= 1){
+				update();
+				updates++;
+				delta--;
+			}
 			render();
+			frames++;
+			if (System.currentTimeMillis() - timer > 1000){
+				timer += 1000;
+				frame.setTitle("Updates per second: " + updates + ", FPS: " + frames);
+				updates = 0;
+				frames = 0;
+			}
 		}
 	}
 	
 	public void update() {
-		
+		clickCount = Mouse.clickCount;
+//		System.out.println("Number of entities: " + entities.size());
+		if (lastClickCount < clickCount){
+			clicked();
+			lastClickCount = clickCount;
+		}
 	}
 	
 	public void render() {
@@ -68,8 +104,12 @@ public class Game extends Canvas implements Runnable{
 		}
 		
 		screen.clear();
-		
+
 		screen.render(0, 0);
+		
+		for (Entity e : entities) {
+			e.render();
+		}
 		
 		for (int i = 0; i < pixels.length; i++) {
 			pixels[i] = screen.pixels[i];
@@ -79,6 +119,12 @@ public class Game extends Canvas implements Runnable{
 		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
 		g.dispose();
 		bs.show();
+	}
+	
+	public void clicked(){
+		Box box = new Box((double)Mouse.getX(), (double)Mouse.getY(), 20.0, true, true, 10.0, screen, this);
+		box.add();
+		System.out.println("Number of entities: " + entities.size());
 	}
 
 	public synchronized void start() {

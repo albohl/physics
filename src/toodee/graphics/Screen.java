@@ -2,8 +2,8 @@ package toodee.graphics;
 
 public class Screen {
 
-	private int width;
-	private int height; 
+	public int width;
+	public int height; 
 	public int[] pixels;
 	
 	public Screen(int width, int height){
