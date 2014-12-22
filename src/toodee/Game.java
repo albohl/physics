@@ -23,10 +23,12 @@ public class Game extends Canvas implements Runnable{
 	
 	public static int width = 800;
 	public static int height = width / 16 * 9;
+	public double tickRate = 60;
 	public static int scale = 3;
 	private int clickCount;
 	private int lastClickCount = 0;
 	public List<Entity> entities;
+	static Box startbox;
 	
 	private Thread gameThread;
 	public JFrame frame = new JFrame();
@@ -36,6 +38,7 @@ public class Game extends Canvas implements Runnable{
 	
 	private BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	private int[] pixels = ((DataBufferInt)image.getRaster().getDataBuffer()).getData();
+
 	
 	public Game() {
 		Dimension size = new Dimension(width, height);
@@ -58,12 +61,14 @@ public class Game extends Canvas implements Runnable{
 		game.frame.setLocationRelativeTo(null);
 		game.frame.setVisible(true);
 		game.start();
+		startbox = new Box((double)width / 2, (double)height * 2 / 3, height/5.0, false, game.screen, game);
+		startbox.add();
 	}
 	
 	public void run() {
 		long lastTime = System.nanoTime();
 		long timer = System.currentTimeMillis();
-		final double ns = 1000000000.0 / 60.0;
+		final double ns = 1000000000.0 / tickRate;
 		double delta = 0;
 		int frames = 0;
 		int updates = 0;
@@ -94,6 +99,9 @@ public class Game extends Canvas implements Runnable{
 			clicked();
 			lastClickCount = clickCount;
 		}
+		for (Entity e : entities){
+			e.update();
+		}
 	}
 	
 	public void render() {
@@ -122,9 +130,11 @@ public class Game extends Canvas implements Runnable{
 	}
 	
 	public void clicked(){
-		Box box = new Box((double)Mouse.getX(), (double)Mouse.getY(), 20.0, true, true, 10.0, screen, this);
+		if (startbox.pointInEntity(Mouse.getX(), Mouse.getY())){
+			startbox.click();
+		}
+		Box box = new Box((double)Mouse.getX(), (double)Mouse.getY(), 20.0, true, screen, this);
 		box.add();
-		System.out.println("Number of entities: " + entities.size());
 	}
 
 	public synchronized void start() {

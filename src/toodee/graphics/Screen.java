@@ -21,7 +21,7 @@ public class Screen {
 	public void render(int xOffset, int yOffset) {
 		for (int y = 0; y < height; y++){
 			for (int x = 0; x < width; x++){
-				pixels[x + y * width] = 0xff00ff;
+				pixels[x + y * width] = 0x0f1fff;
 			}
 		}
 	}
